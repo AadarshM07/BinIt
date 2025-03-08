@@ -8,14 +8,15 @@ import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
 import axios from 'axios';
 import { useRouter } from "next/navigation";
 import Popup from './component/popup.jsx';
+import SubmitPopup from './component/submitPopup.jsx';
 
 const MapComponent = () => {
 	const router = useRouter();
-    const [place, setPlace] = useState("Tokyo"); // Default location
+    const [place, setPlace] = useState("Tokyo");
     const [searchTimeout, setSearchTimeout] = useState(null);
     const [markers, setMarkers] = useState([]);
-    const [selectedMarker, setSelectedMarker] = useState(null);
     const [popupOpen, setPopupOpen] = useState(false);
+	const [submitOpen, setSubmitOpen] = useState(false);
     const mapRef = useRef(null);
     const markersRef = useRef([]);
     const mapContainerRef = useRef(null);
@@ -39,7 +40,7 @@ const MapComponent = () => {
 			});
 			homeButtonRef.current.addEventListener('click', () => {
 				if (userMarkerRef.current) {
-					mapRef.current.setView(userMarkerRef.current.getLatLng(), 15);
+					mapRef.current.setView(userMarkerRef.current.getLatLng());
 				}
 			});
         }
@@ -59,7 +60,7 @@ const MapComponent = () => {
 
     function initMap(lat, lng) {
 		if (mapRef.current) {
-			mapRef.current.setView([lat, lng], 15); // Move to new position if map exists
+			mapRef.current.setView([lat, lng], 15);
 			return;
 		}
 	
@@ -74,7 +75,6 @@ const MapComponent = () => {
 			keepBuffer: 6,
 		}).addTo(mapRef.current);
 	
-		// Initialize Marker Cluster Group
 		const clusterGroup = L.markerClusterGroup();
 		setMarkerClusterGroup(clusterGroup);
 		mapRef.current.addLayer(clusterGroup);
@@ -83,47 +83,10 @@ const MapComponent = () => {
 	}
 	
 
-	// async function addMarker(e, clusterGroup) {
-    //     const { lat, lng } = e.latlng;
-
-    //     try {
-    //         const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
-    //         const data = await response.json();
-	// 		console.log(data);
-
-    //         if (data.error){
-    //             alert("You cannot place markers on water.");
-    //             return;
-    //         }
-
-    //         const icon = L.divIcon({
-    //             className: "custom-marker",
-    //             html: <div class="bg-red-500 text-white font-bold text-xs flex items-center justify-center w-8 h-8 rounded-full shadow-lg border-2 border-white"></div>,
-    //             iconSize: [32, 32],
-    //             iconAnchor: [16, 16],
-    //             popupAnchor: [0, -32],
-    //         });
-
-    //         const marker = L.marker(e.latlng, { icon: icon })
-    //             .bindPopup(`<b>Location:</b> ${lat.toFixed(4)}, ${lng.toFixed(4)}`);
-
-    //         clusterGroup.addLayer(marker);
-    //     } catch (error) {
-    //         console.error("Error checking water body:", error);
-    //     }
-    // }
-
 	async function addMarker(e, clusterGroup) {
 		const { lat, lng } = e.latlng;
 
 		try {
-			// const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
-			// const data = await response.json();
-
-			// if (data.address && (data.address.water || !data.address.country)) {
-			// 	alert("You cannot place markers on water.");
-			// 	return;
-			// }
 
 			const icon = L.divIcon({
 				className: "custom-marker",
@@ -143,27 +106,28 @@ const MapComponent = () => {
 	}
 
     function addUserMarker(x, y) {
-        const userIcon = L.divIcon({
-            className: "user-marker",
-            html: `<div class="bg-blue-500 text-white font-bold text-xs flex items-center justify-center w-8 h-8 rounded-full shadow-lg border-2 border-white"></div>`,
-            iconSize: [32, 32],
-            iconAnchor: [16, 16],
-            popupAnchor: [0, -32],
-        });
-
-        if (mapRef.current) {
-            if (userMarkerRef.current) {
-                userMarkerRef.current.setLatLng([x, y]);
-            } else {
-                userMarkerRef.current = L.marker([x, y], { icon: userIcon })
-                    .addTo(mapRef.current)
-                    .bindPopup("<b>You are here</b>");
-                userMarkerRef.current.on("click", () => {
-                    mapRef.current.setView([x, y], 15);
-                });
-            }
-        }
-    }
+		const userIcon = L.icon({
+			iconUrl: "https://maps.gstatic.com/mapfiles/api-3/images/spotlight-poi2_hdpi.png",
+			iconSize: [27, 43],
+			iconAnchor: [13, 43],
+			popupAnchor: [0, -35]
+		});
+	
+		if (mapRef.current) {
+			if (userMarkerRef.current) {
+				userMarkerRef.current.setLatLng([x, y]);
+			} else {
+				userMarkerRef.current = L.marker([x, y], { icon: userIcon })
+					.addTo(mapRef.current)
+					.bindPopup("<b>You are here</b>");
+	
+				userMarkerRef.current.on("click", () => {
+					mapRef.current.setView([x, y]);
+				});
+			}
+		}
+	}
+	
 
     const searchPlace = async (query) => {
         if (!mapRef.current || !query) return;
@@ -177,13 +141,11 @@ const MapComponent = () => {
             if (data.length > 0) {
                 const { lat, lon, display_name } = data[0];
 
-                mapRef.current.setView([lat, lon], 10); // Move map to new location
+                mapRef.current.setView([lat, lon], 10);
 
-                // Clear previous markers
                 markersRef.current.forEach(marker => mapRef.current.removeLayer(marker));
                 markersRef.current = [];
 
-                // Add new marker
                 const newMarker = L.marker([lat, lon])
                     .addTo(mapRef.current)
                     .bindPopup(display_name)
@@ -209,8 +171,8 @@ const MapComponent = () => {
 	
 		const timeout = setTimeout(() => {
 			searchPlace(place);
-		}, 500); // Delay API calls to prevent excessive requests
-	
+		}, 500);
+
 		setSearchTimeout(timeout);
 		return () => clearTimeout(timeout);
 	}, [place]);
@@ -247,6 +209,7 @@ const MapComponent = () => {
 			<div ref={mapContainerRef} className="w-full h-full" id="map"></div>
 	
 			{popupOpen && <Popup onClose={() => setPopupOpen(false)} />}
+			{submitOpen && <SubmitPopup onClose={() => setSubmitOpen(false)} />}
 		</div>
 	);
 };
