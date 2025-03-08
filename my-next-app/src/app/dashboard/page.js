@@ -94,6 +94,12 @@ const SearchForm = () => {
 		<button type="submit" className="bg-black text-white font-medium text-lg rounded-xl w-full py-3 mt-6 hover:bg-gray-900 transition">
 		  SEARCH
 		</button>
+
+		{/* Submit Button */}
+		<button type="submit" className="bg-black text-white font-medium text-lg rounded-xl w-full py-3 mt-6 hover:bg-gray-900 transition">
+		  SEARCH
+		</button>
+		
 	  </form>
 	);
   };
