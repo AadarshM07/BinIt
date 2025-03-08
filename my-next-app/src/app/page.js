@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import axios from 'axios';
 import Popup from './component/popup.jsx';
 
 const MapComponent = () => {
@@ -38,7 +39,6 @@ const MapComponent = () => {
 
           function addMarker(e) {
             if (markers.length === 0) {
-              // Add marker only if no markers exist
               const newMarker = L.marker(e.latlng, { icon: customIcon }).addTo(map);
 
               newMarker.on('click', () => {
@@ -51,18 +51,25 @@ const MapComponent = () => {
           }
 
           map.on('click', addMarker);
+
+          
+          searchForPlace(map, customIcon);
         }
       }
     }
   }, [markers]);
 
+  
   return (
     <div className="w-full h-screen relative">
       <div className="w-full h-full" id="map"></div>
 
       {popupOpen && <Popup onClose={() => setPopupOpen(false)} />}
+      
+
     </div>
   );
 };
 
 export default MapComponent;
+
