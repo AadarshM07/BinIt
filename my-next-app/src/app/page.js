@@ -1,47 +1,67 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import Popup from './component/popup.jsx';
 
 const MapComponent = () => {
-  useEffect(() => {
+  const [markers, setMarkers] = useState([]);
+  const [selectedMarker, setSelectedMarker] = useState(null);
+  const [popupOpen, setPopupOpen] = useState(false);
+  const mapRef = useRef(null);
 
+  useEffect(() => {
     if (typeof window !== 'undefined' && L) {
       const mapContainer = document.getElementById('map');
-      if (mapContainer) {
-  
-        if (!mapContainer._leaflet_id) {
-     
-          const map = L.map(mapContainer).setView([20.5937, 78.9629], 5); 
-          
+      if (mapContainer && !mapRef.current) {
+        navigator.geolocation?.getCurrentPosition(({ coords }) => {
+          const { latitude, longitude } = coords;
+          initMap(latitude, longitude);
+        });
+
+        function initMap(lat, lng) {
+          const map = L.map(mapContainer).setView([lat, lng], 15);
+          mapRef.current = map;
 
           L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
           }).addTo(map);
 
+          const customIcon = L.divIcon({
+            className: "custom-marker",
+            html: `<div class="bg-red-500 text-white font-bold text-xs flex items-center justify-center w-8 h-8 rounded-full shadow-lg border-2 border-white">📍</div>`,
+            iconSize: [32, 32],
+            iconAnchor: [16, 32],
+            popupAnchor: [0, -32]
+          });
 
-          function drawCircle(e) {
-            const latlng = e.latlng; 
+          function addMarker(e) {
+            if (markers.length === 0) {
+              // Add marker only if no markers exist
+              const newMarker = L.marker(e.latlng, { icon: customIcon }).addTo(map);
 
-            L.circle(latlng, {
-              color: 'red', 
-              fillColor: '#f03', 
-              fillOpacity: 0.5,
-              radius: 50000 
-            }).addTo(map)
-              .bindPopup(`Circle at ${latlng.lat.toFixed(4)}, ${latlng.lng.toFixed(4)}`).openPopup(); // Automatically open the popup
+              newMarker.on('click', () => {
+                setSelectedMarker(e.latlng);
+                setPopupOpen(true);
+              });
+
+              setMarkers([newMarker]);
+            }
           }
 
-            
-          map.on('click', drawCircle);
+          map.on('click', addMarker);
         }
       }
     }
-  }, []);
+  }, [markers]);
 
   return (
-    <div style={{ width: '100%', height: '100vh' }} id="map"></div> 
+    <div className="w-full h-screen relative">
+      <div className="w-full h-full" id="map"></div>
+
+      {popupOpen && <Popup onClose={() => setPopupOpen(false)} />}
+    </div>
   );
 };
 
