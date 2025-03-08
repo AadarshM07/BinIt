@@ -1,51 +1,65 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
 const MapComponent = () => {
-  useEffect(() => {
-    if (typeof window !== 'undefined' && L) {
-      const mapContainer = document.getElementById('map');
-      if (mapContainer && !mapContainer._leaflet_id) {
-        const map = L.map(mapContainer, {
-          center: [20.5937, 78.9629],
-          zoom: 12,
-          zoomControl: false,
-          dragging: false, 
-          scrollWheelZoom: false, 
-          doubleClickZoom: false,
-          boxZoom: false,
-          keyboard: false,
-          fadeAnimation: true,
-          scrollWheelZoom: true,
-        });
+	const [map, setMap] = useState(null);
+	useEffect(() => {
+		if (typeof window !== 'undefined' && L) {
+			const mapContainer = document.getElementById('map');
+			if (mapContainer) {
+				if (!mapContainer._leaflet_id) {
+					const map = L.map(mapContainer, {
+						center: [20.5937, 78.9629], 
+						zoom: 12, 
+						zoomControl: false, 
+						dragging: false, // Prevent user dragging
+						scrollWheelZoom: false, 
+						doubleClickZoom: false,
+						boxZoom: false,
+						keyboard: false,
+						fadeAnimation: true,
+						scrollWheelZoom: true,
+					});
 
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-          keepBuffer: 6,
-          updateWhenIdle: false
-        }).addTo(map);
+					L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+						attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+						keepBuffer: 6,
+						updateWhenIdle: false
+					}).addTo(map);
 
-        function startInfinitePan() {
-          setInterval(() => {
-            map.panBy([350000, 0], { animate: true, duration: 10000 }); 
-          }, 1000); 
-        }
+					// Function to smoothly pan the map indefinitely
+					function startInfinitePan() {
+						setInterval(() => {
+						map.panBy([350000, 0], { animate: true, duration: 10000 }); // Move right smoothly
+						}, 1000); // Change position every second
+					}
 
-        startInfinitePan(); 
-      }
-    }
-  }, []);
+					startInfinitePan(); // Start the smooth panning
+				}
+			}
+		}
+	}, []);
 
-  return (
-    <div className="relative w-full h-screen">
-      <div className="absolute inset-0" id="map"></div>
-      <SearchForm />
-    </div>
-  );
-};
+	return (<div className="relative w-full h-screen">
+		<div className="absolute inset-0" id="map"></div>
+		
+		{/* Container for heading */}
+		<div className="absolute top-5 left-1/2 transform -translate-x-1/2 flex items-center space-x-4 text-3xl font-bold text-black">
+			<h1 className='text-5xl'>BinIt</h1>
+			<span className="text-black">|</span>
+			<h1>Username</h1>
+		</div>
+		
+		<p className='absolute top-20 left-1/2 transform -translate-x-1/2 bg-transparent bg-opacity-100 backdrop-blur-md p-6 rounded-2xl shadow-lg w-full max-w-md text-black'>
+			A collaborative waste management initiative designed to make cities cleaner through community participation. Users can mark locations with trash, and volunteers or waste collectors can pick it up to earn rewards. By integrating maps, location tracking, and a points-based incentive system, BinIt encourages responsible waste disposal and fosters a cleaner, greener environment.
+		</p>
+	
+		<SearchForm />
+  	</div>);
+}
 
 const SearchForm = () => {
 	return (
@@ -84,6 +98,4 @@ const SearchForm = () => {
 	);
   };
   
-
 export default MapComponent;
-
